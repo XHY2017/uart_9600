@@ -1,0 +1,57 @@
+`timescale 1ns / 1ps
+module uart_top(
+	input clk50,
+	input rx,
+	output tx
+);
+wire clk;
+wire dataerror,frameerror;
+wire [7:0] rxdata;
+wire rdsig;
+wire idle;
+
+clkdiv u0(
+	.clk50(clk50),
+	.clkout(clk)
+    );
+
+uartrx u1(//串口接收
+	.clk(clk),
+	.rx(rx),//rx高闲，低忙
+	.dataout(rxdata),
+	.rdsig(rdsig),//	????
+	.dataerror(dataerror),
+	.frameerror(frameerror)
+);
+
+uarttx u2(
+	.clk(clk),				//UART时钟
+	.datain(rxdata),	//需要发送的数据
+	.wrsig(rdsig),			//发送命令上升沿有效
+	.idle(idle),			//线路状态指示，高为线路忙，低为线路空闲
+	.tx(tx)				//发送数据信号
+    );
+	 
+	 
+wire [35:0] CONTROL0;
+wire [255:0] TRIG0;
+chipscope_ila u3(
+    .CONTROL(CONTROL0),
+    .CLK(clk50),
+    .TRIG0({frameerror,dataerror,clk,rx,tx,idle,rdsig,rxdata,1'b1})
+	 );
+chipscope_icon u4(
+    .CONTROL0(CONTROL0)
+	 );
+	 /*
+//assign TRIG0[0] =clk50;
+assign TRIG0[8:1] =rxdata; 
+assign TRIG0[9] =rdsig;
+assign TRIG0[10] =idle;
+assign TRIG0[11] =tx;
+assign TRIG0[12] =rx;
+assign TRIG0[13] =clk;
+assign TRIG0[14] =dataerror;
+assign TRIG0[15] =frameerror;
+	 */
+endmodule
