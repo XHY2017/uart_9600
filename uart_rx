@@ -1,0 +1,124 @@
+`timescale 1ns / 1ps
+module uartrx(
+	input clk,
+	input rx,//楂樻椂鏄┖闂浣庢椂鏄繖
+	output reg [7:0] dataout,
+	output reg rdsig,//	????
+	output reg dataerror,
+	output reg frameerror
+);
+reg receive;
+reg idle;//浣庢椂鏄┖闂楂樻椂鏄繖
+reg rxbuf;
+reg rxfall;
+reg [7:0] cnt;
+reg presult;
+parameter paritymode = 1'b0;
+always @(posedge clk)//rx下降沿检测
+begin
+	rxbuf	<= rx;
+	rxfall	<= rxbuf & (~rx);
+end
+always @(posedge clk)
+begin
+	if(rxfall == 1 && (~idle))begin
+		receive	<= 1'b1;
+	end
+	else if(cnt==8'd168)
+		receive	<= 1'b0;
+end
+always @(posedge clk)
+begin
+	if(receive==1'b1)begin
+		case (cnt)
+			8'd0:begin
+				idle	<= 1'b1;
+				cnt		<= cnt +1'b1;
+				rdsig	<= 1'b0;
+			end
+			8'd24:begin//鎺ユ敹绗浣嶆暟鎹
+				idle	<= 1'b1;
+				cnt		<= cnt +1'b1;
+				rdsig	<= 1'b0;
+				dataout[0] <= rx;
+				presult	<= rx ^ paritymode;
+			end
+			8'd40:begin//鎺ユ敹绗浣嶆暟鎹
+				idle	<= 1'b1;
+				cnt		<= cnt +1'b1;
+				rdsig	<= 1'b0;
+				dataout[1] <= rx;
+				presult	<= rx ^ presult;
+			end
+			8'd56:begin//鎺ユ敹绗浣嶆暟鎹
+				idle	<= 1'b1;
+				cnt		<= cnt +1'b1;
+				rdsig	<= 1'b0;
+				dataout[2] <= rx;
+				presult	<= rx ^ presult;
+			end
+			8'd72:begin//鎺ユ敹绗浣嶆暟鎹
+				idle	<= 1'b1;
+				cnt		<= cnt +1'b1;
+				rdsig	<= 1'b0;
+				dataout[3] <= rx;
+				presult	<= rx ^ presult;
+			end
+			8'd88:begin//鎺ユ敹绗浣嶆暟鎹
+				idle	<= 1'b1;
+				cnt		<= cnt +1'b1;
+				rdsig	<= 1'b0;
+				dataout[4] <= rx;
+				presult	<= rx ^ presult;
+			end
+			8'd104:begin//鎺ユ敹绗浣嶆暟鎹
+				idle	<= 1'b1;
+				cnt		<= cnt +1'b1;
+				rdsig	<= 1'b0;
+				dataout[5] <= rx;
+				presult	<= rx ^ presult;
+			end
+			8'd120:begin//鎺ユ敹绗浣嶆暟鎹
+				idle	<= 1'b1;
+				cnt		<= cnt +1'b1;
+				rdsig	<= 1'b0;
+				dataout[6] <= rx;
+				presult	<= rx ^ presult;
+			end
+			8'd136:begin//第7位
+				idle	<= 1'b1;
+				cnt		<= cnt +1'b1;
+				rdsig	<= 1'b1;
+				dataout[7] <= rx;
+				presult	<= rx ^ presult;
+			end
+			8'd152:begin//奇偶校验位
+				idle	<= 1'b1;
+				cnt		<= cnt +1'b1;
+				rdsig	<= 1'b1;
+				if(presult==rx)
+					dataerror	<= 1'b0;
+				else
+					dataerror	<= 1'b1;
+			end
+			8'd168:begin//停止位
+				idle	<= 1'b1;
+				cnt		<= cnt +1'b1;
+				rdsig	<= 1'b1;
+				if(1'b1==rx)
+					frameerror	<= 1'b0;
+				else
+					frameerror	<= 1'b1;
+			end
+			default :begin
+				cnt		<= cnt +1'b1;
+			end
+		endcase
+	end
+	else begin
+		cnt	<= 8'd0;
+		idle	<= 1'b0;
+		rdsig	<= 1'b0;
+	end
+end
+endmodule
